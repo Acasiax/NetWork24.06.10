@@ -40,7 +40,10 @@ class BookViewController: UIViewController {
     // 2. query string
     // 3. http header - authorization
     // 4. request
-    // 5. response (ex. responseSting)으로 응답 되는 지 먼저 확인
+    // 5. response  6. (ex. responseSting)으로 응답 되는 지 먼저 확인
+    // 7. struct
+    // 8. http status code
+    
     func callResquest() {
         print(#function)
         
@@ -48,7 +51,7 @@ class BookViewController: UIViewController {
         //let url = "https://openapi.naver.com/v1/search/book.json?query=%EA%B8%8D%EC%A0%95&display=5&start=6"
         
         let header: HTTPHeaders = ["X-Naver-Client-Id" : APIKey.naverClientID,
-                      "X-Naver-Client-Secret" :  APIKey.naverClientSecret]
+                                   "X-Naver-Client-Secret" :  APIKey.naverClientSecret]
         
         AF.request(url, method: .get, headers: header).responseString { response in
             print("응답되는지 일단 확인📍\(response)")
@@ -56,15 +59,15 @@ class BookViewController: UIViewController {
         
         
         AF.request(url, method: .get, headers: header).responseDecodable(of: Book.self) { response in
-                switch response.result {
-                case .success(let value):
-                    print("🥳JSON성공했다: \(value)")
-                case .failure(let error):
-                    print(error)
-                }
+            switch response.result {
+            case .success(let value):
+                print("🥳JSON성공했다: \(value)")
+            case .failure(let error):
+                print(error)
             }
-            
         }
+        
+    }
     
     func callRequestKoGPT() {
         print(#function)
@@ -83,24 +86,35 @@ class BookViewController: UIViewController {
             print("응답되는지 일단 확인📍\(response)")
         }
         
+        
         // 1. 디코딩 구조체 오류가 아닌데 왜 식판 오류 문구가 뜰까?(쿼리는 지워봤음)
-        // - 실패 했을 때 nil이 제이슨에서 오는데, 거기에 구조체에 못들어가기 때문에 디코딩 구조체 오류가 뜨는 것. 오류가 뜨는 이유는 성공 했을 때에 사용할 성공 전용 디코딩 구조체(식판)이라서
+        // - 🌱실패 했을 때 nil이 제이슨에서 오는데, 거기에 구조체에 못들어가기 때문에 디코딩 구조체 오류가 뜨는 것. 오류가 뜨는 이유는 성공 했을 때에 사용할 성공 전용 디코딩 구조체(식판)이라서
         // 2. '성공'이 프린트 될까 '실패'가 프린트 될까?
         // 3. '성공'과 '실패'의 기준이 무엇인가?
-        AF.request(url, method: .post, headers: header).responseDecodable(of: Book.self) { response in
-                switch response.result {
-                case .success(let value):
-                    print("🥳JSON성공했다: \(value)")
-                case .failure(let error):
-                    print("⚡️실패했다 원인은?: \(error)")
-                }
-            }
+        // 2번&3번 답 - 🌱상태코드를 기준으로 판별된다.
         
+        //.validate(statusCode: 200..<300) //응답을 하기 전에 위에 코드에 위치해서 200..<300까지를 성공으로 간주한다는 코드임 -> 근데 이미 Alamofire에 내장되어 있어서 안 써도 되는 것임. Alamofire가 인식을 못할 때 혹은 더 명확하게 제시해줘야 할 때 사용한다.
+        AF.request(url, method: .post, headers: header).responseDecodable(of: Book.self) { response in
+            
+            print("STAUS 상태코드: \(response.response?.statusCode ?? 0)")
+            
+            switch response.result {
+            case .success(let value):
+                print("🥳JSON성공했다: \(value)")
+            case .failure(let error):
+                print("⚡️실패했다 원인은?: \(error)")
+            }
+        }
     }
-
-
+    
+    
 }
 
 
 //get 가지고 오고 -> queryString url 1.중요,사적  2. 보내야하는 데이터의 양
 //post 보내는 거
+
+// 🐻+보너스+ .validate(statusCode: 200..<500) 상태코드를 그러면 500으로 상태코드 성공 범위를 설정해주면 실패한 데이터도 성공으로 바뀌느냐?
+// -> 그렇지 않는다. 왜냐면 상태코드를 설정해줘도, 디코딩 구조체(식판)에 맞지 않기 때문
+// 성공 실패가 나는 이유는 크게 2가지 - 디코딩 구조체(식판)에 맞지 않을 때 or 상태코드가 실패로 나눠질 때
+
