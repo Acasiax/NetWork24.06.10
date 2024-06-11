@@ -7,6 +7,8 @@
 
 import UIKit
 import Alamofire
+import SnapKit
+import Kingfisher
 
 struct Market: Decodable {
     let market: String
@@ -24,18 +26,95 @@ struct Market: Decodable {
 
 class BookViewController: UIViewController {
 
+    let searchBar = UISearchBar()
+    let tableView = UITableView()
+    
+    //연속된 모든 데이터에 접근할 수 있도록
+    var list = KakaoBook(documents: [], meta: Meta(isEnd: false, pageableCount: 0, totalCount: 0))
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureView()
-      //  callResquest()
-        callRequestKoGPT()
+        KakaoBookfetchData()
     }
+    
     
     func configureView() {
         print(#function)
         view.backgroundColor = .white
+        tableView.backgroundColor = .brown
+        tableView.rowHeight = 120
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(BookTableViewCell.self, forCellReuseIdentifier: BookTableViewCell.identifier)
+        
+        
+        view.addSubview(searchBar)
+        view.addSubview(tableView)
+        
+        searchBar.snp.makeConstraints { make in
+            make.horizontalEdges.top.equalTo(view.safeAreaLayoutGuide)
+            make.height.equalTo(44)
+        }
+        
+        tableView.snp.makeConstraints { make in
+            make.horizontalEdges.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.top.equalTo(searchBar.snp.bottom)
+        }
     }
     
+
+    func KakaoBookfetchData() {
+        print(#function)
+        
+        let url = APIURL.KakaoBookURL
+   
+        let header: HTTPHeaders = ["Authorization": APIKey.kakaoAuthorization,
+                                   "Content-Type": APIKey.kakaoContent_Type] //파라미터랑은 무관, 파라미터를 제이슨으로 바꿔주지는 않음. 제이슨한테 보내는 타입의 형식만 보내는(알려주는) 것임
+        
+        AF.request(url, method: .get, headers: header).responseString { response in
+            print("응답되는지 일단 확인📍\(response)")
+        }
+        
+        AF.request(url, method: .get, headers: header).responseDecodable(of: KakaoBook.self) { response in
+            
+            print("STAUS 상태코드: \(response.response?.statusCode ?? 0)")
+            
+            switch response.result {
+            case .success(let value):
+                print("🥳JSON성공했다: \(value)")
+                self.list = value
+                self.tableView.reloadData()
+                
+                
+            case .failure(let error):
+                print("⚡️실패했다 원인은?: \(error)")
+            }
+        }
+    }
+    
+    
+  
+}
+
+
+extension BookViewController: UITableViewDelegate, UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return list.documents.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: BookTableViewCell.identifier, for: indexPath) as! BookTableViewCell
+        let data = list.documents[indexPath.row]
+        cell.titleLabel.text = data.title
+        cell.overviewLabel.text = data.contents
+        return cell
+    }
+       
+}
+
+
+extension BookViewController {
     // 1. url
     // 2. query string
     // 3. http header - authorization
@@ -43,7 +122,6 @@ class BookViewController: UIViewController {
     // 5. response  6. (ex. responseSting)으로 응답 되는 지 먼저 확인
     // 7. struct
     // 8. http status code
-    
     func callResquest() {
         print(#function)
         
@@ -117,4 +195,5 @@ class BookViewController: UIViewController {
 // 🐻+보너스+ .validate(statusCode: 200..<500) 상태코드를 그러면 500으로 상태코드 성공 범위를 설정해주면 실패한 데이터도 성공으로 바뀌느냐?
 // -> 그렇지 않는다. 왜냐면 상태코드를 설정해줘도, 디코딩 구조체(식판)에 맞지 않기 때문
 // 성공 실패가 나는 이유는 크게 2가지 - 디코딩 구조체(식판)에 맞지 않을 때 or 상태코드가 실패로 나눠질 때
+
 
