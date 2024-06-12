@@ -9,18 +9,29 @@ import UIKit
 import Alamofire
 import SnapKit
 import Kingfisher
+//페이지네이션
+//1. 스크롤이 끝날 쯤에 다음 페이지를 요청 (pace += 1 후 kakaobookfetchdata)
+//2/ 이전 내용은 어떻게 확인하자?
+//3. 다른 검색어를 입력할 때는? == page 1
+// - 교체가 아니라 append로 되고 있는 문제 발생
+// - 1페이지부터 검색 되도록 설정
+ // - 상단으로 스크롤을 이동
+//4. 배열을 언제 제거해줄 지?
+//5. 마지막 페이지 처리
+// 서버의 데이터가 바뀌면 사용자가 실시간으로 글을 추가할 때 중복 추가되는 문제가 발생할 수 있음
 
-struct Market: Decodable {
-    let market: String
-    let koreanName: String
-    let englishName: String
-    
-    enum CodingKeys: String, CodingKey {
-        case market
-        case koreanName = "korean_name"
-        case englishName = "english_name"
-    }
-}
+
+//struct Market: Decodable {
+//    let market: String
+//    let koreanName: String
+//    let englishName: String
+//    
+//    enum CodingKeys: String, CodingKey {
+//        case market
+//        case koreanName = "korean_name"
+//        case englishName = "english_name"
+//    }
+//}
 
 
 
@@ -29,49 +40,53 @@ class BookViewController: UIViewController {
     let searchBar = UISearchBar()
     let tableView = UITableView()
     
-    //연속된 모든 데이터에 접근할 수 있도록
-    var list = KakaoBook(documents: [], meta: Meta(isEnd: false, pageableCount: 0, totalCount: 0))
+    var list = KakaoBook(documents: [], meta: Meta(is_end: false, pageable_count: 0, total_count: 0))
+
+    var page = 1
+    var isEnd = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         configureView()
-        KakaoBookfetchData()
+       // KakaoBookfetchData(query: searchBar.text!)
     }
     
     
-    func configureView() {
+    func configureView(){
         print(#function)
         view.backgroundColor = .white
-        tableView.backgroundColor = .brown
-        tableView.rowHeight = 120
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.register(BookTableViewCell.self, forCellReuseIdentifier: BookTableViewCell.identifier)
-        
-        
         view.addSubview(searchBar)
         view.addSubview(tableView)
+        tableView.backgroundColor = .brown
+        tableView.rowHeight = 120
         
         searchBar.snp.makeConstraints { make in
-            make.horizontalEdges.top.equalTo(view.safeAreaLayoutGuide)
+            make.top.horizontalEdges.equalTo(view.safeAreaLayoutGuide)
             make.height.equalTo(44)
         }
-        
         tableView.snp.makeConstraints { make in
             make.horizontalEdges.bottom.equalTo(view.safeAreaLayoutGuide)
             make.top.equalTo(searchBar.snp.bottom)
         }
+        
+        searchBar.delegate = self
+        tableView.prefetchDataSource = self
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(BookTableViewCell.self, forCellReuseIdentifier: BookTableViewCell.id)
+        
+        
     }
-    
 
-    func KakaoBookfetchData() {
+    func KakaoBookfetchData(query: String) {
         print(#function)
         
-        let url = APIURL.KakaoBookURL
-   
-        let header: HTTPHeaders = ["Authorization": APIKey.kakaoAuthorization,
-                                   "Content-Type": APIKey.kakaoContent_Type] //파라미터랑은 무관, 파라미터를 제이슨으로 바꿔주지는 않음. 제이슨한테 보내는 타입의 형식만 보내는(알려주는) 것임
-        
+       // let query = ""
+        let url = "\(APIURL.KakaoBookURL) + \(query) + &page\(page) + &size=10"
+        print(#function, url)
+        let header: HTTPHeaders = ["Authorization": APIKey.kakaoAuthorization] //파라미터랑은 무관, 파라미터를 제이슨으로 바꿔주지는 않음. 제이슨한테 보내는 타입의 형식만 보내는(알려주는) 것임
+       
         AF.request(url, method: .get, headers: header).responseString { response in
             print("응답되는지 일단 확인📍\(response)")
         }
@@ -82,10 +97,22 @@ class BookViewController: UIViewController {
             
             switch response.result {
             case .success(let value):
-                print("🥳JSON성공했다: \(value)")
-                self.list = value
+                dump(value)
+                
+                self.isEnd = value.meta.is_end
+                
+                if self.page == 1{
+                    self.list = value
+                    
+                }else{
+                    self.list.documents.append(contentsOf: value.documents)
+                }
                 self.tableView.reloadData()
                 
+                //페이지가 1번일 때 새롭게 검색할 때 스크롤을 위로 상단으로 거게 싶을 때
+                if self.page == 1 {
+                    self.tableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
+                }
                 
             case .failure(let error):
                 print("⚡️실패했다 원인은?: \(error)")
@@ -98,20 +125,65 @@ class BookViewController: UIViewController {
 }
 
 
-extension BookViewController: UITableViewDelegate, UITableViewDataSource {
+extension BookViewController: UISearchBarDelegate {
+    
+    //이거 애플에서 제공해주는 함수 이름? 사용자 정의 함수 아님
+    
+    //무조건 통신이 들어가지 않고,
+    //빈칸, 최소 1자 이상, 같은 글자 등에 대한 처리가 필요할 수 있음.
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        print("클릭")
+        page = 1 //첫페이지로 검색되도록 설정
+        KakaoBookfetchData(query: searchBar.text!)
+    }
+    
+    
+}
+
+    extension BookViewController: UITableViewDataSourcePrefetching {
+        // cellForRowAt이 호출되기 전에 미리 호출됨
+        // 즉, 셀이 화면에 보이기 직전에 필요한 리소스를 미리 다운받는 기능
+        // 호출 시점은 애플이 알아서 결정!
+        func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+            // indexPaths가 잘못 정의되어 있었음
+            print("🧯Prefetch \(indexPaths)")
+            for item in indexPaths {
+                
+                if list.documents.count - 2 == item.row && isEnd == false {
+                    page += 1 //클라이언트 쪽에서 직접 핸들링
+                    KakaoBookfetchData(query: searchBar.text!)
+                    
+                }
+                
+                
+            }
+            
+        }
+
+        func tableView(_ tableView: UITableView, cancelPrefetchingForRowsAt indexPaths: [IndexPath]) {
+            // prefetch 작업을 취소하는 코드 작성
+            print("🫧Cancel prefetching for \(indexPaths)")
+         
+        }
+    }
+
+
+extension BookViewController:UITableViewDataSource, UITableViewDelegate{
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return list.documents.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: BookTableViewCell.identifier, for: indexPath) as! BookTableViewCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: BookTableViewCell.id, for: indexPath) as! BookTableViewCell
         let data = list.documents[indexPath.row]
         cell.titleLabel.text = data.title
         cell.overviewLabel.text = data.contents
+        let url = URL(string: data.thumbnail)
+        cell.thumbnailImageView.kf.setImage(with: url)
         return cell
     }
-       
 }
+   
 
 
 extension BookViewController {
@@ -189,6 +261,7 @@ extension BookViewController {
 }
 
 
+
 //get 가지고 오고 -> queryString url 1.중요,사적  2. 보내야하는 데이터의 양
 //post 보내는 거
 
@@ -197,3 +270,15 @@ extension BookViewController {
 // 성공 실패가 나는 이유는 크게 2가지 - 디코딩 구조체(식판)에 맞지 않을 때 or 상태코드가 실패로 나눠질 때
 
 
+
+
+
+//페이지네이션
+// 1. 테이블뷰 willdisplay cell (메서드)
+//2. scrollview offset
+//3. tableview prefetching(프리패칭)
+
+//컬렉션뷰
+// 가로,세로 스크롤이 가능
+//여러 행/ 열
+ 

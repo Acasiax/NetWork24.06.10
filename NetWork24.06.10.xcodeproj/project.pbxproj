@@ -22,6 +22,8 @@
 		AA5A20D22C17E45900C237FA /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = AA5A20D12C17E45900C237FA /* Kingfisher */; };
 		AA5A20D42C17E63A00C237FA /* BookTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5A20D32C17E63A00C237FA /* BookTableViewCell.swift */; };
 		AA5A20D62C17F38000C237FA /* KakaoBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5A20D52C17F38000C237FA /* KakaoBook.swift */; };
+		AA5A20DA2C182C7500C237FA /* BookcollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5A20D92C182C7500C237FA /* BookcollectionViewController.swift */; };
+		AA5A20DC2C182E7600C237FA /* BookCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5A20DB2C182E7600C237FA /* BookCollectionViewCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +41,8 @@
 		AA5A20CE2C17365500C237FA /* Book.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
 		AA5A20D32C17E63A00C237FA /* BookTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookTableViewCell.swift; sourceTree = "<group>"; };
 		AA5A20D52C17F38000C237FA /* KakaoBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KakaoBook.swift; sourceTree = "<group>"; };
+		AA5A20D92C182C7500C237FA /* BookcollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookcollectionViewController.swift; sourceTree = "<group>"; };
+		AA5A20DB2C182E7600C237FA /* BookCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCollectionViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,10 +95,12 @@
 		AA5A20C12C172B5800C237FA /* 책 */ = {
 			isa = PBXGroup;
 			children = (
+				AA5A20D92C182C7500C237FA /* BookcollectionViewController.swift */,
 				AA5A20C22C172BC200C237FA /* BookViewController.swift */,
 				AA5A20CE2C17365500C237FA /* Book.swift */,
 				AA5A20D32C17E63A00C237FA /* BookTableViewCell.swift */,
 				AA5A20D52C17F38000C237FA /* KakaoBook.swift */,
+				AA5A20DB2C182E7600C237FA /* BookCollectionViewCell.swift */,
 			);
 			name = "책";
 			path = "무비";
@@ -188,6 +194,8 @@
 				AA5A20D42C17E63A00C237FA /* BookTableViewCell.swift in Sources */,
 				AA5A20D62C17F38000C237FA /* KakaoBook.swift in Sources */,
 				AA5A20C32C172BC200C237FA /* BookViewController.swift in Sources */,
+				AA5A20DC2C182E7600C237FA /* BookCollectionViewCell.swift in Sources */,
+				AA5A20DA2C182C7500C237FA /* BookcollectionViewController.swift in Sources */,
 				AA5A20A92C15DBEA00C237FA /* SceneDelegate.swift in Sources */,
 				AA5A20CD2C1735A900C237FA /* APIKey.swift in Sources */,
 			);
